@@ -189,6 +189,7 @@ router.get("/offers", async (req, res) => {
       find.product_price = price;
     }
 
+    const sort = {};
     if (req.query.sort) {
       if (req.query.sort === "price_desc") {
         sort.product_price = -1;
