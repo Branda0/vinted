@@ -6,16 +6,10 @@ const User = require("../models/User");
 const Offer = require("../models/Offer");
 
 //Parametrage cloudinary
-// cloudinary.config({
-//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-//   api_key: process.env.CLOUDINARY_API_KEY,
-//   api_secret: process.env.CLOUDINARY_API_SECRET,
-// });
-
 cloudinary.config({
-  cloud_name: "dxmoas5rb",
-  api_key: "471587226882665",
-  api_secret: "dTmdzbq1zQv-vnQGM7oUmkVu19w",
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 // AUTHENTIFICATION FUNCTION USED FOR ROUTES THAT REQUIRE A VALIDE TOKEN
@@ -69,6 +63,7 @@ router.post("/offer/publish", isAuthenticated, async (req, res) => {
     });
 
     await newOffer.save();
+
     if (req.files.picture) {
       const imageUploaded = await cloudinary.uploader.upload(req.files.picture.path, {
         folder: "/vinted/offers",
@@ -77,7 +72,6 @@ router.post("/offer/publish", isAuthenticated, async (req, res) => {
       newOffer.product_image = imageUploaded;
       await newOffer.save();
     }
-
     res.status(200).json({
       _id: newOffer._id,
       product_name: newOffer.product_name,
@@ -85,8 +79,15 @@ router.post("/offer/publish", isAuthenticated, async (req, res) => {
       product_price: newOffer.product_price,
       product_details: newOffer.product_details,
       owner: {
-        account: newOffer.owner.account,
-        _id: newOffer.owner._id,
+        account: {
+          username: req.tokenUser.account.username,
+          phone: req.tokenUser.account.phone,
+          avatar: {
+            secure_url: req.tokenUser.account.avatar.secure_url,
+            original_filename: req.tokenUser.account.avatar.original_filename,
+          },
+        },
+        _id: req.tokenUser._id,
       },
       product_image: {
         secure_url: newOffer.product_image.secure_url,
@@ -132,7 +133,7 @@ router.delete("/offers/delete", isAuthenticated, async (req, res) => {
 //MODIFY AND UPDATE AN OFFER
 router.put("/offers/modify", isAuthenticated, async (req, res) => {
   try {
-    const offerToModify = await Offer.findById(req.query.id.populate("owner"));
+    const offerToModify = await Offer.findById(req.query.id).populate("owner");
 
     //Check if an offer with the query ID exists on DB
     if (offerToModify) {
@@ -141,22 +142,21 @@ router.put("/offers/modify", isAuthenticated, async (req, res) => {
         if (req.fields.title) offerToModify.product_name = req.fields.title;
         if (req.fields.description) offerToModify.product_description = req.fields.description;
         if (req.fields.price) offerToModify.product_price = req.fields.price;
-        if (req.files.picture.path) {
+        if (req.files.picture) {
           const imageUploaded = await cloudinary.uploader.upload(req.files.picture.path, {
             folder: "/vinted/offers",
             public_id: req.query.id,
           });
           offerToModify.product_image = imageUploaded;
         }
-        if (req.fields.details) {
-          if (req.fields.details.MARQUE) offerToModify.product_details[0].MARQUE = req.fields.details.MARQUE;
-          if (req.fields.details.TAILLE) offerToModify.product_details[1].TAILLE = req.fields.details.TAILLE;
-          if (req.fields.details.ÉTAT) offerToModify.product_details[2].ÉTAT = req.fields.details.ÉTAT;
-          if (req.fields.details.COULEUR)
-            offerToModify.product_details[3].COULEUR = req.fields.details.COULEUR;
-          if (req.fields.details.EMPLACEMENT)
-            offerToModify.product_details[4].EMPLACEMENT = req.fields.details.EMPLACEMENT;
-        }
+
+        if (req.fields.brand) offerToModify.product_details[0].MARQUE = req.fields.brand;
+        if (req.fields.size) offerToModify.product_details[1].TAILLE = req.fields.size;
+        if (req.fields.condition) offerToModify.product_details[2].ÉTAT = req.fields.condition;
+        if (req.fields.color) offerToModify.product_details[3].COULEUR = req.fields.color;
+        if (req.fields.city) offerToModify.product_details[4].EMPLACEMENT = req.fields.city;
+
+        offerToModify.markModified("product_details");
 
         await offerToModify.save();
 
@@ -189,17 +189,16 @@ router.get("/offers", async (req, res) => {
       find.product_price = price;
     }
 
-    const sort = {};
     if (req.query.sort) {
-      if (req.query.sort === "price-desc") {
-        sort.product_price = "-1";
-      } else if (req.query.sort === "price-asc") {
-        sort.product_price = "1";
+      if (req.query.sort === "price_desc") {
+        sort.product_price = -1;
+      } else if (req.query.sort === "price_asc") {
+        sort.product_price = 1;
       }
     }
 
-    const limit = req.query.limit ? (limit = req.query.limit) : (limit = 2);
-    const page = req.query.page ? (page = req.query.page) : 1;
+    const limit = req.query.limit ? req.query.limit : 2;
+    const page = req.query.page ? req.query.page : 1;
 
     const offers = await Offer.find(find)
       .sort(sort)

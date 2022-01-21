@@ -10,6 +10,9 @@ app.use(formidable());
 
 mongoose.connect(process.env.MONGODB_URI);
 
+//LOCAL DB HOST
+//mongoose.connect("mongodb://localhost/vinted");
+
 const usersRoutes = require("./routes/users");
 app.use(usersRoutes);
 
