@@ -85,10 +85,10 @@ router.post("/user/login", async (req, res) => {
         });
         console.log(`${user.email} just logged in`);
       } else {
-        res.status(400).json({ message: "Access denied, wrong password/login" });
+        res.status(400).json({ message: "User not found" });
       }
     } else {
-      res.status(400).json({ message: "Access denied, wrong password/login" });
+      res.status(400).json({ message: "User not found" });
     }
   } catch (error) {
     res.status(400).json({ error: error.message });

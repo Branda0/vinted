@@ -11,13 +11,16 @@ app.use(formidable());
 mongoose.connect(process.env.MONGODB_URI);
 
 //LOCAL DB HOST
-//mongoose.connect("mongodb://localhost/vinted");
+// mongoose.connect("mongodb://localhost/vinted");
 
 const usersRoutes = require("./routes/users");
 app.use(usersRoutes);
 
 const offerRoutes = require("./routes/offers");
 app.use(offerRoutes);
+
+const paymentRoutes = require("./routes/payments");
+app.use(paymentRoutes);
 
 app.all("*", (req, res) => {
   res.status(404).json("Page not Found");
