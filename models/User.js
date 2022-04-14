@@ -11,7 +11,7 @@ const User = mongoose.model("User", {
       type: String,
     },
     phone: String,
-    avatar: Object, // nous verrons plus tard comment uploader une image
+    avatar: Object,
   },
   token: String,
   hash: String,

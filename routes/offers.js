@@ -83,8 +83,8 @@ router.post("/offer/publish", isAuthenticated, async (req, res) => {
           username: req.tokenUser.account.username,
           phone: req.tokenUser.account.phone,
           avatar: {
-            secure_url: req.tokenUser.account.avatar.secure_url,
-            original_filename: req.tokenUser.account.avatar.original_filename,
+            secure_url: req.tokenUser.account.avatar?.secure_url,
+            original_filename: req.tokenUser.account.avatar?.original_filename,
           },
         },
         _id: req.tokenUser._id,

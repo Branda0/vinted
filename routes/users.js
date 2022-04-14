@@ -26,7 +26,7 @@ router.post("/user/signup", async (req, res) => {
         email: req.fields.email,
         account: {
           username: req.fields.username,
-          phone: req.fields.phone,
+          // phone: req.fields.phone,
           //avatar: ajouté après création de l'objet,
         },
         token: uid2(64),
@@ -35,12 +35,15 @@ router.post("/user/signup", async (req, res) => {
       });
 
       await newUser.save();
-      const imageUploaded = await cloudinary.uploader.upload(req.files.avatar.path, {
-        folder: "/vinted/users",
-        public_id: newUser._id,
-      });
-      newUser.account.avatar = imageUploaded;
-      await newUser.save();
+
+      if (req.files.avatar) {
+        const imageUploaded = await cloudinary.uploader.upload(req.files.avatar.path, {
+          folder: "/vinted/users",
+          public_id: newUser._id,
+        });
+        newUser.account.avatar = imageUploaded;
+        await newUser.save();
+      }
 
       res.status(200).json({
         _id: newUser._id,
@@ -49,8 +52,8 @@ router.post("/user/signup", async (req, res) => {
           username: newUser.username,
           phone: newUser.phone,
           avatar: {
-            secure_url: newUser.account.avatar.secure_url,
-            original_filename: newUser.account.avatar.original_filename,
+            secure_url: newUser.account.avatar?.secure_url,
+            original_filename: newUser.account.avatar?.original_filename,
           },
         },
       });
@@ -66,11 +69,6 @@ router.post("/user/login", async (req, res) => {
     const user = await User.findOne({ email: req.fields.email });
     if (user) {
       if (SHA256(req.fields.password + user.salt).toString(encBase64) === user.hash) {
-        const userFiltered = (({ _id, token, account }) => ({
-          _id,
-          token,
-          account,
-        }))(user);
         res.status(200).json({
           _id: user._id,
           token: user.token,
@@ -78,8 +76,8 @@ router.post("/user/login", async (req, res) => {
             username: user.username,
             phone: user.phone,
             avatar: {
-              secure_url: user.account.avatar.secure_url,
-              original_filename: user.account.avatar.original_filename,
+              secure_url: user.account.avatar?.secure_url,
+              original_filename: user.account.avatar?.original_filename,
             },
           },
         });
