@@ -14,7 +14,7 @@ router.post("/user/signup", async (req, res) => {
   //CHECK IF USER ALREADY EXISTS -> MAIL IS UNIQUE
   try {
     if (await User.findOne({ email: req.fields.email })) {
-      res.status(400).json({ error: { message: "This email is already associated with an account" } });
+      res.status(409).json({ error: { message: "This email is already associated with an account" } });
     } else if (!req.fields.email || req.fields.email === "") {
       res.status(400).json({
         error: { message: "Valid Email is needed for account creation" },
