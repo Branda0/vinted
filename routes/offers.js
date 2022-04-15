@@ -5,12 +5,7 @@ const cloudinary = require("cloudinary").v2;
 const User = require("../models/User");
 const Offer = require("../models/Offer");
 
-//Parametrage cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const products = require("../data/products.json");
 
 // AUTHENTIFICATION FUNCTION USED FOR ROUTES THAT REQUIRE A VALIDE TOKEN
 const isAuthenticated = async (req, res, next) => {
@@ -47,7 +42,7 @@ router.post("/offer/publish", isAuthenticated, async (req, res) => {
       return res.status(400).json({
         error: { message: "Invalid description, 50 characters maximum" },
       });
-
+    console.log("PUBLISH");
     const newOffer = new Offer({
       product_name: req.fields.title,
       product_description: req.fields.description,
@@ -66,7 +61,7 @@ router.post("/offer/publish", isAuthenticated, async (req, res) => {
 
     if (req.files.picture) {
       const imageUploaded = await cloudinary.uploader.upload(req.files.picture.path, {
-        folder: "/vinted/offers",
+        folder: "vinted/offers",
         public_id: newOffer._id,
       });
       newOffer.product_image = imageUploaded;
@@ -245,6 +240,68 @@ router.get("/offer/:id", async (req, res) => {
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
+});
+
+// RESET ET DB INIT with JSON DATA PRODUCTS
+router.get("/reset-offers", async (req, res) => {
+  const allUserId = await User.find().select("_id");
+
+  // Delete all actual offers
+  await Offer.deleteMany({});
+
+  // Delete images of actual offer from cloudinary
+  try {
+    await cloudinary.api.delete_resources_by_prefix("vinted/offers");
+  } catch (error) {
+    console.log("deleteResources ===>  ", error.message);
+  }
+
+  // Create new offers from data/products.json file
+  for (let i = 0; i < products.length; i++) {
+    try {
+      const newOffer = new Offer({
+        product_name: products[i].product_name,
+        product_description: products[i].product_description,
+        product_price: products[i].product_price,
+        product_details: products[i].product_details,
+        // get random ref from owners in DB
+        owner: allUserId[Math.floor(Math.random() * allUserId.length)],
+      });
+
+      // Upload product image on cloudinary
+      const resultImage = await cloudinary.uploader.upload(products[i].product_image.secure_url, {
+        folder: `vinted/offers`,
+        public_id: newOffer._id,
+      });
+
+      // Uploader for additional images
+      // newProduct_pictures = [];
+      // for (let j = 0; j < products[i].product_pictures.length; j++) {
+      //   try {
+      //     const resultPictures = await cloudinary.uploader.upload(
+      //       products[i].product_pictures[j].secure_url,
+      //       {
+      //         folder: `vinted/offers/${newOffer._id}`,
+      //       }
+      //     );
+
+      //     newProduct_pictures.push(resultPictures);
+      //   } catch (error) {
+      //     console.log("uploadCloudinaryError ===> ", error.message);
+      //   }
+      // }
+
+      newOffer.product_image = resultImage;
+      // newOffer.product_pictures = newProduct_pictures;
+
+      await newOffer.save();
+      console.log(`✅ offer saved : ${i + 1} / ${products.length}`);
+    } catch (error) {
+      console.log("newOffer error ===> ", error.message);
+    }
+  }
+  res.send("Done !");
+  console.log(`🍺 All offers saved !`);
 });
 
 module.exports = router;

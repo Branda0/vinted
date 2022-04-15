@@ -26,8 +26,7 @@ router.post("/user/signup", async (req, res) => {
         email: req.fields.email,
         account: {
           username: req.fields.username,
-          // phone: req.fields.phone,
-          //avatar: ajouté après création de l'objet,
+          phone: req.fields.phone,
         },
         token: uid2(64),
         salt: salt,
@@ -36,14 +35,17 @@ router.post("/user/signup", async (req, res) => {
 
       await newUser.save();
 
-      if (req.files.avatar) {
-        const imageUploaded = await cloudinary.uploader.upload(req.files.avatar.path, {
-          folder: "/vinted/users",
+      const imageUploaded = await cloudinary.uploader.upload(
+        req.files.avatar
+          ? req.files.avatar.path
+          : "https://res.cloudinary.com/dxmoas5rb/image/upload/v1650026287/vinted/user_vho7ih.jpg",
+        {
+          folder: "vinted/users",
           public_id: newUser._id,
-        });
-        newUser.account.avatar = imageUploaded;
-        await newUser.save();
-      }
+        }
+      );
+      newUser.account.avatar = imageUploaded;
+      await newUser.save();
 
       res.status(200).json({
         _id: newUser._id,
