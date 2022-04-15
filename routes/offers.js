@@ -230,7 +230,7 @@ router.get("/offer/:id", async (req, res) => {
         select: " account.username account.phone account.avatar.original_filename account.avatar.secure_url", //-email -token -hash -salt -_id -__v ",
       })
       .select(
-        "product_details product_name product_price product_image.secure_url product_image.original_filename "
+        "product_details product_name product_price product_description product_image.secure_url product_image.original_filename "
       );
     if (offer) {
       res.status(200).json(offer);
