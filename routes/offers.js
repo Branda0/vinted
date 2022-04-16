@@ -186,14 +186,14 @@ router.get("/offers", async (req, res) => {
 
     const sort = {};
     if (req.query.sort) {
-      if (req.query.sort === "price_desc") {
+      if (req.query.sort === "price-desc") {
         sort.product_price = -1;
-      } else if (req.query.sort === "price_asc") {
+      } else if (req.query.sort === "price-asc") {
         sort.product_price = 1;
       }
     }
 
-    const limit = req.query.limit ? req.query.limit : 2;
+    const limit = req.query.limit ? req.query.limit : 16;
     const page = req.query.page ? req.query.page : 1;
 
     const offers = await Offer.find(find)
